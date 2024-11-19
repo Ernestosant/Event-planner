@@ -1,37 +1,30 @@
+from langchain_openai import ChatOpenAI
+import os
+from langchain_core.messages import SystemMessage, HumanMessage
+from custom_prompts import sys_ev_plnner_prompt, event_extract_sys_prompt
 import streamlit as st
-from features import get_event_plan, extract_event_details
-import PyPDF2
 
-st.title("Automatic Event Planner")
+try:
+    api_key = os.environ["OPENAI_API_KEY"]
+except :
+    api_key = st.secrets["OPENAI_API_KEY"]
 
-st.write("Please enter a description of your event or upload a PDF or TXT file with the event details.")
+llm = ChatOpenAI(temperature=0.5, model_name="gpt-4", api_key=api_key)
 
-event_description = st.text_area("Event Description", "")
+def get_event_plan(event_details):
+    messages = [
+        SystemMessage(content=sys_ev_plnner_prompt),
+        HumanMessage(content=f"Event details: {event_details}"),
+    ]
+    response = llm.invoke(messages)
+    return response.content
 
-uploaded_file = st.file_uploader("Upload a file", type=['txt', 'pdf'])
 
-if uploaded_file is not None:
-    if uploaded_file.type == "text/plain":
-        file_text = uploaded_file.read().decode('utf-8')
-    elif uploaded_file.type == "application/pdf":
-        pdf_reader = PyPDF2.PdfReader(uploaded_file)
-        file_text = ""
-        for page in pdf_reader.pages:
-            file_text += page.extract_text()
-    else:
-        st.error("Unsupported file type.")
-        file_text = ""
-else:
-    file_text = ""
-
-event_details = event_description + "\n" + file_text
-
-if st.button("Generate Event Plan"):
-    if event_details.strip() == "":
-        st.error("Please provide event details.")
-    else:
-        with st.spinner("Generating event plan..."):
-            event_details = extract_event_details(event_details)
-            event_plan = get_event_plan(event_details)
-        st.success("Event plan generated:")
-        st.write(event_plan)
+def extract_event_details(transcription):
+    messages = [
+        SystemMessage(content=event_extract_sys_prompt),
+        HumanMessage(content=f"Transcription: {transcription}"),
+    ]
+    response = llm.invoke(messages)
+    return response.content
+    
