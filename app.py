@@ -2,12 +2,11 @@ from langchain_openai import ChatOpenAI
 import os
 from langchain_core.messages import SystemMessage, HumanMessage
 from custom_prompts import sys_ev_plnner_prompt, event_extract_sys_prompt
-import streamlit as st
 
-try:
-    api_key = os.environ["OPENAI_API_KEY"]
-except :
-    api_key = st.secrets["OPENAI_API_KEY"]
+
+api_key = os.environ["OPENAI_API_KEY"]
+
+    
 
 llm = ChatOpenAI(temperature=0.5, model_name="gpt-4", api_key=api_key)
 
